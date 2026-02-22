@@ -25,11 +25,6 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Create .env file
-        run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-
-
       - name: Install Composer Dependencies
         run: composer install --no-ansi --no-dev --no-interaction --no-plugins --no-progress --no-scripts --optimize-autoloader
 
@@ -58,7 +53,15 @@ jobs:
           envs: ENV_FILE_CONTENT
           script: |
             cd ${{ secrets.REMOTE_PATH }}
-            echo "$ENV_FILE_CONTENT" > .env
+            if [ -z "$ENV_FILE_CONTENT" ]; then
+              echo "ERROR: ENV_FILE secret is empty!"
+              exit 1
+            fi
+            printf "%s" "$ENV_FILE_CONTENT" > .env
+            ls -lh .env
+            mkdir -p storage/framework/{sessions,views,cache}
+            chmod -R 775 storage bootstrap/cache
+            php artisan optimize:clear
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
