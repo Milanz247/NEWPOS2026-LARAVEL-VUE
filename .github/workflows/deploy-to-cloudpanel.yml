@@ -63,6 +63,8 @@ jobs:
             chmod -R 775 storage bootstrap/cache
             php artisan optimize:clear
             php artisan migrate --force
+            # Spatie permissions පාවිච්චි කරනවා නම් cache එක reset කරන්න අවශ්‍යයි
+            php artisan permission:cache-reset || true
             php artisan db:seed --force
             php artisan config:cache
             php artisan route:cache
