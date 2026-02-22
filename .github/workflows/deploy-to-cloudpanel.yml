@@ -11,18 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Node dependencies
-        # Use legacy-peer-deps to avoid ERESOLVE peer dependency failures in CI
-        run: npm ci --legacy-peer-deps
-
-      - name: Build assets
-        run: npm run build
-
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -30,7 +18,20 @@ jobs:
           extensions: mbstring, bcmath, intl
 
       - name: Install Composer dependencies
+        # Install PHP deps first so vendor files (e.g. Ziggy) exist for the frontend build
         run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node dependencies
+        # Use legacy-peer-deps to avoid ERESOLVE peer dependency failures in CI
+        run: npm ci --legacy-peer-deps
+
+      - name: Build assets
+        run: npm run build
 
       - name: Create .env file
         run: |
