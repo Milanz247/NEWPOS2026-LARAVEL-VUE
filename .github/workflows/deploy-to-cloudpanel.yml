@@ -24,18 +24,34 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
+      - name: Debug SSH host
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "Warning: SSH_HOST secret is empty or not set" >&2
+          else
+            echo "Attempting to resolve ${{ secrets.SSH_HOST }} (this output may redact the secret)"
+            if command -v getent >/dev/null 2>&1; then
+              echo "getent hosts result:"; getent hosts "${{ secrets.SSH_HOST }}" || true
+            fi
+            if command -v nslookup >/dev/null 2>&1; then
+              echo "nslookup result:"; nslookup "${{ secrets.SSH_HOST }}" || true
+            fi
+            echo "ping (1 packet) result:"; ping -c 1 "${{ secrets.SSH_HOST }}" || true
+          fi
+
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts || echo "ssh-keyscan failed: host may not resolve or be unreachable" >&2
 
       - name: Deploy with rsync
         run: |
           # Adjust the target path if your domain is different
           # Typical CloudPanel path: /home/<user>/htdocs/<domain>/
-          rsync -avz --delete \
+          RSYNC_RSH="ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=10"
+          rsync -e "$RSYNC_RSH" -avz --delete \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='node_modules/' \
@@ -44,7 +60,7 @@ jobs:
 
       - name: Post-Deploy Commands
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
           mkdir -p storage/framework/{sessions,views,cache} && \
           php artisan migrate --force && \
           php artisan config:cache && \
