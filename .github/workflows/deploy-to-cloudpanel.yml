@@ -17,59 +17,39 @@ jobs:
           php-version: "8.2"
           extensions: mbstring, bcmath, intl
 
-      - name: Install Composer dependencies
-        # Install PHP deps first so vendor files (e.g. Ziggy) exist for the frontend build
-        run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Node dependencies
-        # Use legacy-peer-deps to avoid ERESOLVE peer dependency failures in CI
-        run: npm ci --legacy-peer-deps
-
-      - name: Build assets
-        run: npm run build
+      - name: Install Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
       - name: Create .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
-
-      - name: Check host resolution
-        run: |
-          echo "Resolving ${{ secrets.SSH_HOST }}"
-          getent hosts "${{ secrets.SSH_HOST }}" || ping -c 3 "${{ secrets.SSH_HOST }}" || true
 
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          for i in 1 2 3; do
-            ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts && break || sleep 5
-          done
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy with rsync
-        env:
-          RSYNC_RSH: 'ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=10'
         run: |
+          # Adjust the target path if your domain is different
+          # Typical CloudPanel path: /home/<user>/htdocs/<domain>/
           rsync -avz --delete \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='node_modules/' \
             --exclude='storage/' \
-            . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SITE_USER }}/htdocs/${{ secrets.DOMAIN_NAME }}/
+            . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }}/
 
       - name: Post-Deploy Commands
         run: |
-          ssh -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SITE_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
-          composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist || true && \
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
           mkdir -p storage/framework/{sessions,views,cache} && \
           php artisan migrate --force && \
           php artisan config:cache && \
           php artisan route:cache && \
-          php artisan view:cache"
+          php artisan view:cache && \
+          php artisan db:seed --class=DefaultCategoriesSeeder --force"
 
      
