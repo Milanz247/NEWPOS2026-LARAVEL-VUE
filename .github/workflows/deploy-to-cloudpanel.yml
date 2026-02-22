@@ -53,11 +53,11 @@ jobs:
             --exclude='.github/' \
             --exclude='node_modules/' \
             --exclude='storage/' \
-            . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }}/
+            . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SITE_USER }}/htdocs/${{ secrets.DOMAIN_NAME }}/
 
       - name: Post-Deploy Commands
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SITE_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
           composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist || true && \
           mkdir -p storage/framework/{sessions,views,cache} && \
           php artisan migrate --force && \
