@@ -6,7 +6,7 @@ import { useTranslation } from '@/lib/useTranslation.js';
 
 const { t } = useTranslation();
 
-defineProps({ roles: Array });
+defineProps({ roles: Object });
 
 const deleteRole = async (id, name) => {
     const ok = await confirmDelete({
@@ -46,7 +46,7 @@ const deleteRole = async (id, name) => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="role in roles" :key="role.id">
+                    <tr v-for="role in roles.data" :key="role.id">
                         <td>
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0" :class="role.name === 'Owner' ? 'bg-brand-dark text-white' : 'bg-brand-lighter text-brand-dark'">
@@ -71,7 +71,7 @@ const deleteRole = async (id, name) => {
                             </div>
                         </td>
                     </tr>
-                    <tr v-if="!roles || roles.length === 0">
+                    <tr v-if="!roles.data || roles.data.length === 0">
                         <td colspan="3" class="text-center py-12 text-brand-muted">{{ t('no_records') }}</td>
                     </tr>
                 </tbody>
@@ -79,9 +79,30 @@ const deleteRole = async (id, name) => {
             </div>
         </div>
 
+        <!-- Pagination -->
+        <div v-if="roles.last_page > 1" class="flex items-center justify-between px-4 py-3 border-t border-brand-border">
+            <p class="text-xs text-brand-muted">
+                {{ t('showing') }} {{ roles.from }}–{{ roles.to }} {{ t('of') }} {{ roles.total }}
+            </p>
+            <div class="flex gap-1">
+                <template v-for="(link, i) in roles.links" :key="i">
+                    <Link
+                        v-if="link.url"
+                        :href="link.url"
+                        class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
+                        :class="link.active ? 'bg-brand-dark text-white border-brand-dark' : 'border-brand-border text-brand-accent hover:bg-brand-light'"
+                        v-html="link.label"
+                        preserve-state
+                        preserve-scroll
+                    />
+                    <span v-else class="px-3 py-1.5 text-xs text-brand-muted" v-html="link.label" />
+                </template>
+            </div>
+        </div>
+
         <!-- Mobile Card View -->
         <div class="sm:hidden space-y-3">
-            <div v-for="role in roles" :key="role.id" class="card p-4">
+            <div v-for="role in roles.data" :key="role.id" class="card p-4">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0" :class="role.name === 'Owner' ? 'bg-brand-dark text-white' : 'bg-brand-lighter text-brand-dark'">
@@ -104,8 +125,26 @@ const deleteRole = async (id, name) => {
                     </template>
                 </div>
             </div>
-            <div v-if="!roles || roles.length === 0" class="card p-8 text-center text-brand-muted text-sm">
+            <div v-if="!roles.data || roles.data.length === 0" class="card p-8 text-center text-brand-muted text-sm">
                 {{ t('no_records') }}
+            </div>
+
+            <!-- Mobile Pagination -->
+            <div v-if="roles.last_page > 1" class="flex items-center justify-between">
+                <Link
+                    v-if="roles.prev_page_url"
+                    :href="roles.prev_page_url"
+                    class="btn-secondary text-xs py-1.5 px-4"
+                    preserve-state preserve-scroll
+                >← {{ t('previous') }}</Link>
+                <span class="text-xs text-brand-muted">{{ roles.current_page }} / {{ roles.last_page }}</span>
+                <Link
+                    v-if="roles.next_page_url"
+                    :href="roles.next_page_url"
+                    class="btn-secondary text-xs py-1.5 px-4"
+                    preserve-state preserve-scroll
+                >{{ t('next') }} →</Link>
+                <span v-else />
             </div>
         </div>
     </AdminLayout>

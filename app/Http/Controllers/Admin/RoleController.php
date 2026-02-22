@@ -25,7 +25,8 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roles = Role::with('permissions')->get();
+        $roles = Role::with('permissions')->latest()->paginate(10)->withQueryString();
+
         return Inertia::render('Admin/RoleManagement/Index', [
             'roles' => $roles,
         ]);
