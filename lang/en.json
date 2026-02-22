@@ -152,5 +152,7 @@
     "permissions": "Permissions",
     "all_permissions": "All permissions",
     "permission_count": "permission(s)",
-    "delete_role_warning": "This will remove this access level from all assigned staff."
+    "delete_role_warning": "This will remove this access level from all assigned staff.",
+    "toast_position": "Notification Position",
+    "toast_position_hint": "Select where the notification toast messages should appear on the screen"
 }

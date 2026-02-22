@@ -27,6 +27,7 @@ class Business extends Model
         'time_format',
         'currency_precision',
         'quantity_precision',
+        'toast_position',
         'is_setup_completed',
     ];
 

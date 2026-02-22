@@ -30,6 +30,7 @@ class HandleInertiaRequests extends Middleware
                     'currency_symbol'          => $b->currency_symbol ?? '$',
                     'currency_symbol_placement'=> $b->currency_symbol_placement ?? 'before',
                     'timezone'                 => $b->timezone ?? 'UTC',
+                    'toast_position'           => $b->toast_position ?? 'top-right',
                 ];
             }
         }

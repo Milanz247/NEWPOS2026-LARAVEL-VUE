@@ -66,6 +66,7 @@ class BusinessSettingController extends Controller
             'time_format'             => 'required|in:12,24',
             'currency_precision'      => 'required|integer|between:0,4',
             'quantity_precision'      => 'required|integer|between:0,4',
+            'toast_position'          => 'required|string|in:top-right,top-left,bottom-right,bottom-left,top-center,bottom-center',
         ]);
 
         Business::updateOrCreate(['id' => 1], $validated);

@@ -57,6 +57,7 @@ const systemForm = useForm({
     time_format:             props.settings?.time_format ?? '12',
     currency_precision:      props.settings?.currency_precision ?? 2,
     quantity_precision:      props.settings?.quantity_precision ?? 2,
+    toast_position:          props.settings?.toast_position ?? 'top-right',
 });
 
 const saveSystem = () => {
@@ -84,6 +85,15 @@ const dateFormats = [
     { value: 'Y-m-d', label: 'YYYY-MM-DD (2026-01-31)' },
     { value: 'd-m-Y', label: 'DD-MM-YYYY (31-01-2026)' },
     { value: 'd.m.Y', label: 'DD.MM.YYYY (31.01.2026)' },
+];
+
+const toastPositions = [
+    { value: 'top-right',     label: 'Top Right' },
+    { value: 'top-left',      label: 'Top Left' },
+    { value: 'bottom-right',  label: 'Bottom Right' },
+    { value: 'bottom-left',   label: 'Bottom Left' },
+    { value: 'top-center',    label: 'Top Center' },
+    { value: 'bottom-center', label: 'Bottom Center' },
 ];
 
 // ── Logo Upload Form ─────────────────────────
@@ -476,6 +486,15 @@ const deleteLocation = async (loc) => {
                                 </select>
                                 <InputError :message="systemForm.errors.quantity_precision" />
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="input-label">{{ t('toast_position') }} *</label>
+                            <select v-model="systemForm.toast_position" required class="input-field mt-1.5">
+                                <option v-for="pos in toastPositions" :key="pos.value" :value="pos.value">{{ pos.label }}</option>
+                            </select>
+                            <p class="text-xs text-brand-muted mt-1">{{ t('toast_position_hint') ?? 'Choose where notification popups appear' }}</p>
+                            <InputError :message="systemForm.errors.toast_position" />
                         </div>
 
                         <div class="pt-4 border-t border-brand-border flex justify-end">
