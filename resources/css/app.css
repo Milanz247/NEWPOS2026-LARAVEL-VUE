@@ -618,6 +618,35 @@ select.input-field {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Ensure tables inside cards can still scroll horizontally even when
+   the card uses `overflow-hidden`. This keeps table layout intact and
+   exposes a horizontal scrollbar when needed. */
+/* Make horizontal scrolling available only on small screens (mobile/tablet).
+   On desktop (>=1024px) tables should fit the layout and not show a horizontal
+   scrollbar. */
+@media (max-width: 1023px) {
+    .card.overflow-hidden > .table-responsive {
+        overflow-x: auto;
+    }
+    /* Force a sensible minimum width for wide tables so they naturally
+       overflow on small screens and trigger horizontal scrolling. */
+    .table-responsive .data-table {
+        min-width: 720px;
+    }
+}
+
+@media (min-width: 1024px) {
+    /* Desktop: disable horizontal scrolling and allow table to layout
+       within the card. */
+    .table-responsive {
+        overflow-x: visible;
+    }
+    .table-responsive .data-table {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
 /* Compact table on small screens */
 @media (max-width: 639px) {
     .data-table th,
