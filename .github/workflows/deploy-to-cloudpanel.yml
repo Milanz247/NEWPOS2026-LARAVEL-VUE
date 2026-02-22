@@ -29,6 +29,7 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
+
       - name: Install Composer Dependencies
         run: composer install --no-ansi --no-dev --no-interaction --no-plugins --no-progress --no-scripts --optimize-autoloader
 
@@ -54,10 +55,14 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: ENV_FILE_CONTENT
           script: |
             cd ${{ secrets.REMOTE_PATH }}
+            echo "$ENV_FILE_CONTENT" > .env
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan storage:link
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
