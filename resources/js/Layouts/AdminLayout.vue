@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import AppSidebar       from '@/Components/AppSidebar.vue';
+import AppHeader        from '@/Components/AppHeader.vue';
+import AppFooter        from '@/Components/AppFooter.vue';
+import AppToast         from '@/Components/AppToast.vue';
 import AppNotifications from '@/Components/AppNotifications.vue';
-import AppSidebar from '@/Components/AppSidebar.vue';
-import AppHeader  from '@/Components/AppHeader.vue';
-import AppFooter  from '@/Components/AppFooter.vue';
 
 const isSidebarCollapsed = ref(false);
 const isMobileSidebarOpen = ref(false);
@@ -80,6 +81,9 @@ onUnmounted(() => {
             <AppFooter />
         </div>
 
-        <AppNotifications />
     </div>
+
+    <!-- Global toast stack + flash watcher (outside layout flow) -->
+    <AppToast />
+    <AppNotifications />
 </template>

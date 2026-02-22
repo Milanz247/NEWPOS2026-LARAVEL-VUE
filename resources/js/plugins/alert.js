@@ -1,5 +1,15 @@
 import Swal from 'sweetalert2';
-import { toast } from 'vue-sonner';
+import { useToast } from '@/composables/useToast.js';
+
+const { success: _success, error: _error, warning: _warning, info: _info } = useToast();
+
+// ─────────────────────────────────────────────
+//  TOAST  —  Thin wrappers around useToast
+// ─────────────────────────────────────────────
+export const toastSuccess = (message, options = {}) => _success(message, options);
+export const toastError   = (message, options = {}) => _error(message, options);
+export const toastWarning = (message, options = {}) => _warning(message, options);
+export const toastInfo    = (message, options = {}) => _info(message, options);
 
 // ─────────────────────────────────────────────
 //  SWEETALERT2  —  Configured Instance
@@ -28,36 +38,6 @@ const swalBase = Swal.mixin({
 // ─────────────────────────────────────────────
 //  PUBLIC API
 // ─────────────────────────────────────────────
-
-/**
- * Show a success toast
- */
-export const toastSuccess = (message, options = {}) => {
-    toast.success(message, {
-        duration: options.duration ?? 4000,
-        description: options.description ?? undefined,
-    });
-};
-
-/**
- * Show an error toast
- */
-export const toastError = (message, options = {}) => {
-    toast.error(message, {
-        duration: options.duration ?? 5000,
-        description: options.description ?? undefined,
-    });
-};
-
-/**
- * Show an info / neutral toast
- */
-export const toastInfo = (message, options = {}) => {
-    toast(message, {
-        duration: options.duration ?? 4000,
-        description: options.description ?? undefined,
-    });
-};
 
 /**
  * Show a delete confirmation dialog.
@@ -96,7 +76,12 @@ export const confirm = async (options = {}) => {
 // ─────────────────────────────────────────────
 export const AlertPlugin = {
     install(app) {
-        app.config.globalProperties.$toast   = { success: toastSuccess, error: toastError, info: toastInfo };
+        app.config.globalProperties.$toast = {
+            success: toastSuccess,
+            error:   toastError,
+            warning: toastWarning,
+            info:    toastInfo,
+        };
         app.config.globalProperties.$confirm = confirm;
         app.config.globalProperties.$confirmDelete = confirmDelete;
     },
