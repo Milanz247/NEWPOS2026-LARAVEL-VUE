@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BusinessSetting;
+use App\Models\Business;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +12,7 @@ class SystemCheckController extends Controller
 {
     public function index()
     {
-        $setup = BusinessSetting::first();
+        $setup = Business::first();
         if ($setup && $setup->is_setup_completed) {
             return redirect('/dashboard');
         }
