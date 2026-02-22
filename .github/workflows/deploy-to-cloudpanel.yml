@@ -17,7 +17,8 @@ jobs:
           node-version: '18'
 
       - name: Install Node dependencies
-        run: npm ci
+        # Use legacy-peer-deps to avoid ERESOLVE peer dependency failures in CI
+        run: npm ci --legacy-peer-deps
 
       - name: Build assets
         run: npm run build
