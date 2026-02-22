@@ -26,7 +26,7 @@ jobs:
           cache: "npm"
 
       - name: Install Composer Dependencies
-        run: composer install --no-ansi --no-dev --no-interaction --no-plugins --no-progress --no-scripts --optimize-autoloader
+        run: composer install --no-ansi --no-interaction --no-plugins --no-progress --no-scripts --optimize-autoloader
 
       - name: Install NPM Dependencies & Build
         run: |
