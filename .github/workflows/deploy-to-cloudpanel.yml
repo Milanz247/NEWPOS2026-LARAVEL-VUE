@@ -9,63 +9,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: mbstring, bcmath, intl
+          extensions: mbstring, xml, bcmath, curl, zip, intl, readline, openssl
+          coverage: none
 
-      - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
       - name: Create .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
-      - name: Debug SSH host
-        run: |
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then
-            echo "Warning: SSH_HOST secret is empty or not set" >&2
-          else
-            echo "Attempting to resolve ${{ secrets.SSH_HOST }} (this output may redact the secret)"
-            if command -v getent >/dev/null 2>&1; then
-              echo "getent hosts result:"; getent hosts "${{ secrets.SSH_HOST }}" || true
-            fi
-            if command -v nslookup >/dev/null 2>&1; then
-              echo "nslookup result:"; nslookup "${{ secrets.SSH_HOST }}" || true
-            fi
-            echo "ping (1 packet) result:"; ping -c 1 "${{ secrets.SSH_HOST }}" || true
-          fi
+      - name: Install Composer Dependencies
+        run: composer install --no-ansi --no-dev --no-interaction --no-plugins --no-progress --no-scripts --optimize-autoloader
 
-      - name: Setup SSH Key
+      - name: Install NPM Dependencies & Build
         run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts || echo "ssh-keyscan failed: host may not resolve or be unreachable" >&2
+          npm install
+          npm run build
 
-      - name: Deploy with rsync
-        run: |
-          # Adjust the target path if your domain is different
-          # Typical CloudPanel path: /home/<user>/htdocs/<domain>/
-          RSYNC_RSH="ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=10"
-          rsync -e "$RSYNC_RSH" -avz --delete \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='node_modules/' \
-            --exclude='storage/' \
-            . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }}/
+      - name: Deploy to Server via SSH
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-avz --delete"
+          SOURCE: "."
+          REMOTE_HOST: ${{ secrets.SSH_HOST }}
+          REMOTE_USER: ${{ secrets.SSH_USER }}
+          TARGET: ${{ secrets.REMOTE_PATH }}
+          EXCLUDE: "/node_modules/, /tests/, /.git/, /.github/, /storage/logs/, /storage/framework/cache/, /storage/framework/sessions/, /storage/framework/views/, .env, /database/database.sqlite"
 
-      - name: Post-Deploy Commands
-        run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/${{ secrets.SSH_USER }}/htdocs/${{ secrets.DOMAIN_NAME }} && \
-          mkdir -p storage/framework/{sessions,views,cache} && \
-          php artisan migrate --force && \
-          php artisan config:cache && \
-          php artisan route:cache && \
-          php artisan view:cache && \
-          php artisan db:seed --class=DefaultCategoriesSeeder --force"
-
-     
+      - name: Post-Deployment Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.REMOTE_PATH }}
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan storage:link
